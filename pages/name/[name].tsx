@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { GetStaticProps, GetStaticPaths, NextPage } from 'next';
-import { Button, Card, Container, Grid, Text, Image } from '@nextui-org/react';
+import { GetStaticPaths, GetStaticProps, NextPage } from 'next';
+import { Grid, Card, Button, Container, Text, Image } from '@nextui-org/react';
 import confetti from 'canvas-confetti';
 
+import { useState } from 'react';
 import { pokeApi } from '../../api';
 import { Layout } from '../../components/layouts';
-import { Pokemon } from '../../interfaces';
+import { Pokemon, PokemonListResponse } from '../../interfaces';
 import { localFavorites } from '../../utils';
 
 interface Props {
   pokemon: Pokemon;
 }
-const PokemonPage: NextPage<Props> = ({ pokemon }) => {
+const PokemonByNamePage: NextPage<Props> = ({ pokemon }) => {
   const [isInFavorites, setIsInFavorites] = useState(localFavorites.existsInFavorites(pokemon.id));
 
   const onToggleFavorite = () => {
@@ -65,20 +65,19 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
     </Layout>
   );
 };
-// You should use getStaticPaths if you’re statically pre-rendering pages that use dynamic routes
-
 export const getStaticPaths: GetStaticPaths = async (ctx) => {
-  const pokemon151 = [...Array(151)].map((value, index) => `${index + 1}`);
+  const { data } = await pokeApi.get<PokemonListResponse>('/pokemon?limit=151');
+  const arrayPokemonNames: string[] = data.results.map((pokemon) => pokemon.name);
   return {
-    paths: pokemon151.map((id) => ({
-      params: { id },
+    paths: arrayPokemonNames.map((name) => ({
+      params: { name },
     })),
     fallback: false,
   };
 };
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const { id } = params as { id: string };
-  const { data } = await pokeApi.get<Pokemon>(`/pokemon/${id}`);
+  const { name } = params as { name: string };
+  const { data } = await pokeApi.get<Pokemon>(`/pokemon/${name}`);
   const pokemon = {
     id: data.id,
     name: data.name,
@@ -90,4 +89,4 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   };
 };
-export default PokemonPage;
+export default PokemonByNamePage;
